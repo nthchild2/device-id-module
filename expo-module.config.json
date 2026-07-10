@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["FintechSecurityModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.fintechsecurity.FintechSecurityModule"]
+  }
+}

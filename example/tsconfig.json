@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "fintech-security": ["../src/index"],
+      "fintech-security/*": ["../src/*"]
+    }
+  }
+}
