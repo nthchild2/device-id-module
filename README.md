@@ -77,3 +77,30 @@ import FintechSecurity from 'fintech-security';
 
 const id = await FintechSecurity.getIdentifier();
 ```
+
+## Running the example app
+
+The `example/` app renders a button that calls `getIdentifier()` and displays the value (or the typed error code).
+
+### Prerequisites
+
+- **Node.js** 20+
+- **JDK 17 or 21** — JDK 24+ breaks the React Native/CMake build. If `java -version` shows 24+, point Gradle to an older JDK (Android Studio bundles JDK 21 at `<Android Studio>/Contents/jbr/Contents/Home`) via `JAVA_HOME`, or add `org.gradle.java.home=<jdk-path>` to `example/android/gradle.properties` after prebuild.
+- **Android SDK** with an emulator or a connected device. If Gradle can't find it, set `ANDROID_HOME` or create `example/android/local.properties` with `sdk.dir=<sdk-path>` (macOS default: `~/Library/Android/sdk`).
+- iOS is not runnable yet: the Swift implementation is pending.
+
+### Steps
+
+```sh
+# 1. Repo root: install and compile the module's TS (Metro serves build/, not src/)
+npm install
+npm run build
+
+# 2. Example app
+cd example
+npm install
+npx expo prebuild --platform android   # generates example/android (gitignored)
+npx expo run:android                   # builds, installs and starts Metro
+```
+
+`example/android` is generated — it is not committed, so `prebuild` is required on a fresh clone. The example resolves `fintech-security` from the repo root via Metro's `extraNodeModules` (see `example/metro.config.js`); no `npm link` is needed.

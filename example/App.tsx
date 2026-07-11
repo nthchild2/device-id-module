@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Button, Text, View } from 'react-native';
 import FintechSecurity from 'fintech-security';
 
 import { styles } from './styles';
 
 type IdentifierState =
+  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'success'; id: string }
   | { status: 'error'; code: string; message: string };
 
 export default function App() {
-  const [state, setState] = useState<IdentifierState>({ status: 'loading' });
+  const [state, setState] = useState<IdentifierState>({ status: 'idle' });
 
   const loadIdentifier = useCallback(async () => {
     setState({ status: 'loading' });
@@ -23,15 +24,14 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    loadIdentifier();
-  }, [loadIdentifier]);
-
   return (
     <View style={styles.container}>
       <Text style={styles.header}>FintechSecurity</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Device identifier</Text>
+        {state.status === 'idle' && (
+          <Text style={styles.placeholder}>Press the button to fetch it</Text>
+        )}
         {state.status === 'loading' && <ActivityIndicator />}
         {state.status === 'success' && (
           <Text selectable style={styles.identifier}>
@@ -45,7 +45,7 @@ export default function App() {
           </>
         )}
       </View>
-      <Button title="Reload" onPress={loadIdentifier} />
+      <Button title="Get identifier" onPress={loadIdentifier} />
     </View>
   );
 }

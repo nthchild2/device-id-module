@@ -22,6 +22,10 @@ export const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 8,
   },
+  placeholder: {
+    fontSize: 16,
+    color: '#999',
+  },
   identifier: {
     fontSize: 16,
     fontVariant: ['tabular-nums'],
