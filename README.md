@@ -78,6 +78,20 @@ import FintechSecurity from 'fintech-security';
 const id = await FintechSecurity.getIdentifier();
 ```
 
+## Scripts
+
+All run from the repo root:
+
+| Script | What it does |
+|---|---|
+| `npm run build` | Compiles `src/` to `build/` (what Metro and npm consumers use) |
+| `npm run clean` | Deletes `build/` |
+| `npm run lint` | ESLint over `src/` |
+| `npm test` | Jest for the TS layer (watch mode when run in a terminal) |
+| `npm run test:android` | Runs the module's JUnit tests, printing each result to the console |
+| `npm run open:android` | Opens `example/android` in Android Studio |
+| `npm run open:ios` | Opens `example/ios` in Xcode |
+
 ## Testing
 
 ### Android
@@ -88,11 +102,15 @@ The identifier logic lives in `DeviceIdentifierProvider`, which receives the `Se
 - `ANDROID_ID` null (rare devices) → `IdentifierUnavailableException`
 - `ANDROID_ID` blank → `IdentifierUnavailableException`
 
-Run from `example/android`:
+Run from the repo root:
 
 ```sh
-./gradlew :fintech-security:testDebugUnitTest
+npm run test:android
 ```
+
+Each test prints its result to the console (`testLogging` is configured in `android/build.gradle`, and the script passes `--rerun` so cached results are re-executed). The HTML report lands in `android/build/reports/tests/testDebugUnitTest/index.html`.
+
+Note: the module's `android/` folder is a Gradle subproject of the example app (standard `create-expo-module` layout), so the tests run through `example/android`. That project must exist first — complete the [example app setup](#running-the-example-app) once before running them. Only the module and its dependencies are compiled, not the app's APK.
 
 The Expo adapter (`FintechSecurityModule.kt`) is not unit-tested: it contains no logic — it resolves the Context and delegates to the provider. It is exercised end-to-end by the example app.
 
@@ -122,9 +140,9 @@ The `example/` app renders a button that calls `getIdentifier()` and displays th
 ### Steps
 
 ```sh
-# 1. Repo root: install and compile the module's TS (Metro serves build/, not src/)
+# 1. Repo root: install (the prepare hook compiles the module's TS into build/,
+#    which is what Metro serves — not src/)
 npm install
-npm run build
 
 # 2. Example app
 cd example
@@ -132,5 +150,7 @@ npm install
 npx expo prebuild --platform android   # generates example/android (gitignored)
 npx expo run:android                   # builds, installs and starts Metro
 ```
+
+An emulator must be running (or a device connected) before `run:android`. If the build fails with a JDK or SDK location error, see Prerequisites above.
 
 `example/android` is generated — it is not committed, so `prebuild` is required on a fresh clone. The example resolves `fintech-security` from the repo root via Metro's `extraNodeModules` (see `example/metro.config.js`); no `npm link` is needed.

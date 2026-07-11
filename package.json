@@ -1,7 +1,7 @@
 {
   "name": "fintech-security",
   "version": "0.1.0",
-  "description": "My new module",
+  "description": "Expo native module that returns a unique device identifier (FintechSecurity)",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -9,6 +9,7 @@
     "clean": "node internal/module_scripts/clean.js",
     "lint": "eslint src/",
     "test": "node internal/module_scripts/test.js",
+    "test:android": "cd example/android && ./gradlew :fintech-security:testDebugUnitTest --rerun",
     "prepare": "node internal/module_scripts/prepare.js",
     "open:ios": "node internal/module_scripts/open-ios.js",
     "open:android": "node internal/module_scripts/open-android.js"
