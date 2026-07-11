@@ -78,6 +78,36 @@ import FintechSecurity from 'fintech-security';
 const id = await FintechSecurity.getIdentifier();
 ```
 
+## Testing
+
+### Android
+
+La lógica del identificador vive en `DeviceIdentifierProvider`, que recibe la lectura de `Settings.Secure` como función inyectada (`() -> String?`); un constructor secundario conecta la llamada real. La suite (`android/src/test`) cubre:
+
+- `ANDROID_ID` presente → se devuelve tal cual
+- `ANDROID_ID` null (dispositivos raros) → `IdentifierUnavailableException`
+- `ANDROID_ID` blank → `IdentifierUnavailableException`
+
+Se corren desde `example/android`:
+
+```sh
+./gradlew :fintech-security:testDebugUnitTest
+```
+
+El adaptador Expo (`FintechSecurityModule.kt`) no tiene unit tests: no contiene lógica — resuelve el Context y delega al provider. Lo ejercita end-to-end la app de ejemplo.
+
+### Decisión de herramientas
+
+Se consideraron tres opciones para testear código cuya única dependencia de Android es una llamada estática:
+
+| Opción | Por qué se eligió / descartó |
+|---|---|
+| Robolectric | Simula el `ContentResolver` real, pero trae los jars `android-all` y configuración de runner para testear un guard de null/blank. Se justifica en código que usa resources, lifecycle o storage; desproporcionado aquí |
+| MockK (`mockkStatic`) | No requiere refactor, pero parcha clases globalmente a nivel de classloader y acopla los tests a la API exacta llamada en lugar del comportamiento |
+| **Lectura inyectada + JUnit puro (elegida)** | El fake es una lambda local a cada test, cero dependencias agregadas, firmas públicas sin cambios |
+
+Trade-off aceptado: la única línea que llama a `Settings.Secure` no tiene unit test; la cubre la app de ejemplo corriendo en un dispositivo.
+
 ## Correr la app de ejemplo
 
 La app en `example/` muestra un botón que llama a `getIdentifier()` y despliega el valor (o el código de error tipado).
