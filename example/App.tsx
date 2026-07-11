@@ -1,28 +1,51 @@
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Button, Text, View } from 'react-native';
+import FintechSecurity from 'fintech-security';
+
+import { styles } from './styles';
+
+type IdentifierState =
+  | { status: 'loading' }
+  | { status: 'success'; id: string }
+  | { status: 'error'; code: string; message: string };
 
 export default function App() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.header}>Module API Example</Text>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+  const [state, setState] = useState<IdentifierState>({ status: 'loading' });
 
-function Group(props: { name: string; children: React.ReactNode }) {
+  const loadIdentifier = useCallback(async () => {
+    setState({ status: 'loading' });
+    try {
+      const id = await FintechSecurity.getIdentifier();
+      setState({ status: 'success', id });
+    } catch (error) {
+      const { code, message } = error as Error & { code?: string };
+      setState({ status: 'error', code: code ?? 'UNKNOWN', message });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadIdentifier();
+  }, [loadIdentifier]);
+
   return (
-    <View style={styles.group}>
-      <Text style={styles.groupHeader}>{props.name}</Text>
-      {props.children}
+    <View style={styles.container}>
+      <Text style={styles.header}>FintechSecurity</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Device identifier</Text>
+        {state.status === 'loading' && <ActivityIndicator />}
+        {state.status === 'success' && (
+          <Text selectable style={styles.identifier}>
+            {state.id}
+          </Text>
+        )}
+        {state.status === 'error' && (
+          <>
+            <Text style={styles.errorCode}>{state.code}</Text>
+            <Text style={styles.errorMessage}>{state.message}</Text>
+          </>
+        )}
+      </View>
+      <Button title="Reload" onPress={loadIdentifier} />
     </View>
   );
 }
-
-const styles = {
-  header: { fontSize: 30, margin: 20 },
-  groupHeader: { fontSize: 20, marginBottom: 20 },
-  group: { margin: 20, backgroundColor: '#fff', borderRadius: 10, padding: 20 },
-  container: { flex: 1, backgroundColor: '#eee' },
-  view: { flex: 1, height: 200 },
-};
