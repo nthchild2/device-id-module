@@ -87,7 +87,8 @@ All run from the repo root:
 | `npm run build` | Compiles `src/` to `build/` (what Metro and npm consumers use) |
 | `npm run clean` | Deletes `build/` |
 | `npm run lint` | ESLint over `src/` |
-| `npm test` | Jest for the TS layer (watch mode when run in a terminal) |
+| `npm test` | Jest for the module's TS layer (single run) |
+| `npm run test:example` | Jest for the example app (single run) |
 | `npm run test:android` | Runs the module's JUnit tests, printing each result to the console |
 | `npm run open:android` | Opens `example/android` in Android Studio |
 | `npm run open:ios` | Opens `example/ios` in Xcode |
@@ -113,6 +114,33 @@ Each test prints its result to the console (`testLogging` is configured in `andr
 Note: the module's `android/` folder is a Gradle subproject of the example app (standard `create-expo-module` layout), so the tests run through `example/android`. That project must exist first — complete the [example app setup](#running-the-example-app) once before running them. Only the module and its dependencies are compiled, not the app's APK.
 
 The Expo adapter (`FintechSecurityModule.kt`) is not unit-tested: it contains no logic — it resolves the Context and delegates to the provider. It is exercised end-to-end by the example app.
+
+### TypeScript
+
+The module's JS surface (`src/__tests__/`, Jest with the `jest-expo` preset, `requireNativeModule` mocked) covers the contract:
+
+- The native module is resolved under the name `FintechSecurity`
+- `getIdentifier()` is exposed and passes the native result through
+- The rejection codes (`ERR_IDENTIFIER_UNAVAILABLE`, `ERR_IDENTIFIER_STORAGE_ACCESS`) stay stable
+
+```sh
+npm test   # add --watch for watch mode
+```
+
+### Example app
+
+`example/App.test.tsx` (Jest + React Native Testing Library, the module mocked) covers the screen's state machine:
+
+- Starts idle: the module is not called on mount
+- Pressing the button shows the identifier
+- A rejection with a typed code shows the code and message
+- A rejection without a code falls back to `UNKNOWN`
+
+```sh
+npm run test:example   # or: cd example && npm test
+```
+
+No emulator is needed for either suite.
 
 ### Tooling decision
 

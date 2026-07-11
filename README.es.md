@@ -87,7 +87,8 @@ Todos se corren desde la raíz del repo:
 | `npm run build` | Compila `src/` a `build/` (lo que usan Metro y los consumidores de npm) |
 | `npm run clean` | Borra `build/` |
 | `npm run lint` | ESLint sobre `src/` |
-| `npm test` | Jest para la capa TS (modo watch al correrlo en una terminal) |
+| `npm test` | Jest para la capa TS del módulo (una sola corrida) |
+| `npm run test:example` | Jest para la app de ejemplo (una sola corrida) |
 | `npm run test:android` | Corre los tests JUnit del módulo, imprimiendo cada resultado en consola |
 | `npm run open:android` | Abre `example/android` en Android Studio |
 | `npm run open:ios` | Abre `example/ios` en Xcode |
@@ -113,6 +114,33 @@ Cada test imprime su resultado en consola (`testLogging` está configurado en `a
 Nota: el folder `android/` del módulo es un subproyecto Gradle de la app de ejemplo (layout estándar de `create-expo-module`), así que los tests corren a través de `example/android`. Ese proyecto debe existir primero — completa el [setup de la app de ejemplo](#correr-la-app-de-ejemplo) una vez antes de correrlos. Solo se compila el módulo y sus dependencias, no el APK de la app.
 
 El adaptador Expo (`FintechSecurityModule.kt`) no tiene unit tests: no contiene lógica — resuelve el Context y delega al provider. Lo ejercita end-to-end la app de ejemplo.
+
+### TypeScript
+
+La superficie JS del módulo (`src/__tests__/`, Jest con el preset `jest-expo`, `requireNativeModule` mockeado) cubre el contrato:
+
+- El módulo nativo se resuelve con el nombre `FintechSecurity`
+- `getIdentifier()` está expuesto y pasa el resultado nativo tal cual
+- Los códigos de rechazo (`ERR_IDENTIFIER_UNAVAILABLE`, `ERR_IDENTIFIER_STORAGE_ACCESS`) se mantienen estables
+
+```sh
+npm test   # agrega --watch para modo watch
+```
+
+### App de ejemplo
+
+`example/App.test.tsx` (Jest + React Native Testing Library, con el módulo mockeado) cubre la máquina de estados de la pantalla:
+
+- Arranca idle: el módulo no se llama al montar
+- Presionar el botón muestra el identificador
+- Un rechazo con código tipado muestra el código y el mensaje
+- Un rechazo sin código cae a `UNKNOWN`
+
+```sh
+npm run test:example   # o: cd example && npm test
+```
+
+Ninguna de las dos suites necesita emulador.
 
 ### Decisión de herramientas
 
