@@ -178,6 +178,10 @@ Accepted trade-off: the single line that calls `Settings.Secure` is not unit-tes
 
 The `example/` app renders a button that calls `getIdentifier()` and displays the value (or the typed error code).
 
+| Android — `ANDROID_ID` | iOS — Keychain-persisted UUID |
+|:---:|:---:|
+| <img src="screenshots/android.png" width="300" alt="Example app on Android showing the ANDROID_ID"> | <img src="screenshots/ios.png" width="300" alt="Example app on iOS showing the Keychain-persisted UUID"> |
+
 ### Prerequisites
 
 - **Node.js** 20+
