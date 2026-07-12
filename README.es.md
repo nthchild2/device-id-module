@@ -17,26 +17,26 @@ La API correcta depende del caso de uso, y algunos casos de uso no se resuelven 
 | Antifraude (multi-accounting, account takeover) | Sobrevivir reinstalación/reset | UUID persistido en Keychain (iOS), `ANDROID_ID` (Android), más señales del lado del servidor |
 | Correlacionar usuarios entre apps de la misma empresa | Mismo valor entre las apps del vendor | IDFV / App Set ID |
 
-Planteé esta pregunta al equipo, y sus respuestas fijaron los requisitos:
+Hice estas pregunta al equipo, y sus respuestas determinaron los requisitos:
 
 1. El identificador **debe sobrevivir la reinstalación de la app**.
 2. **No** necesita sobrevivir un factory reset.
 3. Basta el alcance por app — no necesita coincidir entre las demás apps de la empresa.
 4. Identifica al **dispositivo**, no al usuario: debe cambiar cuando el usuario cambia de teléfono.
 
-Ese perfil descarta el IDFV en iOS (se resetea con la reinstalación cuando es la única app del vendor) y descarta los mecanismos cross-app como App Set ID (fuera de alcance por la respuesta 3). Apunta al diseño implementado aquí.
+Este perfil descarta el IDFV en iOS (se resetea con la reinstalación cuando es la única app del vendor) y descarta los mecanismos cross-app como App Set ID (fuera de alcance por la respuesta 3). Apunta al diseño implementado aquí.
 
 ### Qué se descartó y por qué
 
-- **IMEI, MAC address, UDID**: muertos. El IMEI está bloqueado para apps normales desde Android 10; la MAC devuelve una constante desde Android 6/iOS 7; el UDID se eliminó en iOS 7.
-- **IDFA / Advertising ID**: por política son solo para publicidad, reseteables por el usuario, y en iOS están detrás del prompt de ATT. Usarlos para otra cosa es causal de rechazo en las stores.
+- **IMEI, MAC address, UDID**: muertos. El IMEI está bloqueado para apps normales desde Android 10; la dirección MAC devuelve una constante desde Android 6/iOS 7; el UDID se eliminó en iOS 7.
+- **IDFA / Advertising ID**: por política son solo para publicidad, reseteables por el usuario, y en iOS están detrás del prompt de ATT. Usarlos para otra cosa es causa de rechazo en las stores.
 - **DeviceCheck, App Attest, Play Integrity, Key Attestation**: requieren un backend que verifique tokens contra Apple/Google, así que quedan fuera del alcance de este ejercicio.
 - **MediaDrm/Widevine ID**: legible sin permisos y sobrevive el factory reset, pero es una API de DRM reutilizada para identificación. El usuario no puede resetearla ni ver que se recolecta, y sigue al hardware entre dueños. La política de Google Play solo lo tolera bajo la excepción de prevención de fraude y debe declararse en el Data Safety form. Aceptable como señal secundaria en un stack antifraude; no como identificador primario.
 
 ### Qué devuelve este módulo
 
 - **iOS: un UUID generado una sola vez y persistido en el Keychain**, con `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` y no sincronizable. Los items del Keychain sobreviven la desinstalación de la app, lo que satisface el requisito 1. Los atributos `ThisDeviceOnly` + no sincronizable son los que satisfacen el requisito 4: el item queda excluido de la sincronización de iCloud Keychain y de las restauraciones entre dispositivos, así que el valor nunca sigue al usuario a un teléfono nuevo. Se pierde con factory reset.
-- **Android: `ANDROID_ID`** (SSAID). Con alcance por app-signing-key + usuario + dispositivo desde Android 8. Satisface todos los requisitos tal cual: sobrevive reinstalación, se pierde con factory reset, alcance por app, y nunca se traslada a otro dispositivo. Sin permisos y sin dependencia de Google Play Services, lo cual es relevante para dispositivos sin GMS como los Huawei.
+- **Android: `ANDROID_ID`**. Con alcance por app-signing-key + usuario + dispositivo desde Android 8. Satisface todos los requisitos tal cual: sobrevive reinstalación, se pierde con factory reset, alcance por app, y nunca se traslada a otro dispositivo. No requiere permisos y ni dependencias de Google Play Services, lo cual es relevante para dispositivos sin GMS como los Huawei.
 
 ### Cómo evolucionó la decisión de iOS
 
@@ -161,9 +161,16 @@ La app en `example/` muestra un botón que llama a `getIdentifier()` y despliega
 ### Prerrequisitos
 
 - **Node.js** 20+
+
+Para Android:
+
 - **JDK 17 o 21** — JDK 24+ rompe el build de React Native/CMake. Si `java -version` muestra 24+, apunta Gradle a un JDK más viejo (Android Studio trae JDK 21 en `<Android Studio>/Contents/jbr/Contents/Home`) vía `JAVA_HOME`, o agrega `org.gradle.java.home=<ruta-jdk>` a `example/android/gradle.properties` después del prebuild.
 - **Android SDK** con un emulador o dispositivo conectado. Si Gradle no lo encuentra, define `ANDROID_HOME` o crea `example/android/local.properties` con `sdk.dir=<ruta-sdk>` (default en macOS: `~/Library/Android/sdk`).
-- iOS todavía no corre: la implementación Swift está pendiente.
+
+Para iOS:
+
+- **Xcode** (la app completa, no solo Command Line Tools). Si `xcodebuild` se queja del developer directory, corre `sudo xcode-select -s /Applications/Xcode.app`.
+- **CocoaPods** — `brew install cocoapods`. Nota: `gem install cocoapods` falla contra el Ruby del sistema de macOS (2.6, demasiado viejo para las dependencias de CocoaPods); Homebrew es el camino práctico.
 
 ### Pasos
 
@@ -175,10 +182,16 @@ npm install
 # 2. App de ejemplo
 cd example
 npm install
+
+# Android
 npx expo prebuild --platform android   # genera example/android (gitignorado)
 npx expo run:android                   # compila, instala y arranca Metro
+
+# iOS
+npx expo prebuild --platform ios       # genera example/ios + pod install (gitignorado)
+npx expo run:ios                       # compila, instala y arranca Metro
 ```
 
-Debe haber un emulador corriendo (o un dispositivo conectado) antes del `run:android`. Si el build falla con un error de JDK o de ubicación del SDK, revisa los Prerrequisitos.
+Debe haber un emulador/simulador corriendo (o un dispositivo conectado) antes de ejecutar `run:android` / `run:ios`. Si el build de Android falla con un error de JDK o de ubicación del SDK, revisa los Prerrequisitos.
 
-`example/android` es generado — no está commiteado, así que el `prebuild` es obligatorio en un clone fresco. El example resuelve `fintech-security` desde la raíz del repo vía `extraNodeModules` de Metro (ver `example/metro.config.js`); no se necesita `npm link`.
+`example/android` es generado, así que el `prebuild` es obligatorio en un clon fresco. El example resuelve `fintech-security` desde la raíz del repo vía `extraNodeModules` de Metro (ver `example/metro.config.js`); no se necesita `npm link`.
