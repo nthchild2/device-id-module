@@ -10,7 +10,9 @@
     "lint": "eslint src/",
     "test": "jest",
     "test:example": "cd example && CI=1 npx jest",
+    "test:ios": "DEVELOPER_DIR=\"${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}\" swift test",
     "test:android": "cd example/android && ./gradlew :fintech-security:testDebugUnitTest --rerun",
+    "test:all": "npm test && npm run test:example && npm run test:ios && npm run test:android",
     "prepare": "node internal/module_scripts/prepare.js",
     "open:ios": "node internal/module_scripts/open-ios.js",
     "open:android": "node internal/module_scripts/open-android.js"
@@ -21,13 +23,13 @@
     "fintech-security",
     "FintechSecurity"
   ],
-  "repository": "https://github.com/nthchild2/fintech-security",
+  "repository": "https://github.com/nthchild2/device-id-module",
   "bugs": {
-    "url": "https://github.com/nthchild2/fintech-security/issues"
+    "url": "https://github.com/nthchild2/device-id-module/issues"
   },
   "author": "nthchild1 <nthchild1@gmail.com> (https://github.com/nthchild2)",
   "license": "MIT",
-  "homepage": "https://github.com/nthchild2/fintech-security#readme",
+  "homepage": "https://github.com/nthchild2/device-id-module#readme",
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@types/jest": "^29.2.1",

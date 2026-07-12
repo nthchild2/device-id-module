@@ -55,3 +55,6 @@ yarn-error.log
 
 # Expo
 .expo/*
+
+# Swift Package Manager (iOS unit tests)
+.build/

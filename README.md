@@ -89,7 +89,9 @@ All run from the repo root:
 | `npm run lint` | ESLint over `src/` |
 | `npm test` | Jest for the module's TS layer (single run) |
 | `npm run test:example` | Jest for the example app (single run) |
+| `npm run test:ios` | XCTest suite for the Swift identifier logic, via `swift test` (no simulator needed) |
 | `npm run test:android` | Runs the module's JUnit tests, printing each result to the console |
+| `npm run test:all` | Runs the four suites above in sequence |
 | `npm run open:android` | Opens `example/android` in Android Studio |
 | `npm run open:ios` | Opens `example/ios` in Xcode |
 
@@ -114,6 +116,24 @@ Each test prints its result to the console (`testLogging` is configured in `andr
 Note: the module's `android/` folder is a Gradle subproject of the example app (standard `create-expo-module` layout), so the tests run through `example/android`. That project must exist first — complete the [example app setup](#running-the-example-app) once before running them. Only the module and its dependencies are compiled, not the app's APK.
 
 The Expo adapter (`FintechSecurityModule.kt`) is not unit-tested: it contains no logic — it resolves the Context and delegates to the provider. It is exercised end-to-end by the example app.
+
+### iOS
+
+The identifier logic lives in `DeviceIdentifierProvider` (UUID generation injected as a closure) on top of a `KeychainStoring` protocol; `KeychainStore` is the real implementation. The suite (`Tests/FintechSecurityCoreTests`, XCTest with a fake store) covers:
+
+- Stored value present → returned as-is, nothing generated or written
+- No value stored → a UUID is generated, persisted and returned
+- Keychain **access error** on read → propagates, nothing generated or written. This is the critical case: a locked Keychain (e.g. before the first unlock after a restart) must not be mistaken for "no identifier stored", or the original value would be overwritten once the Keychain heals, permanently changing the device's identity
+- Write failure → propagates
+- Undecodable stored data → propagates
+
+Run from the repo root:
+
+```sh
+npm run test:ios
+```
+
+The tests run through a minimal SwiftPM manifest (`Package.swift`) that compiles only the two pure Swift files. Reason: `example/ios` is generated and gitignored, so an XCTest target added to that Xcode project would not survive a re-prebuild; `swift test` is committed with the repo and needs no simulator. The Expo adapter (`FintechSecurityModule.swift`) follows the same rule as Android: no logic, no unit tests, exercised by the example app.
 
 ### TypeScript
 
